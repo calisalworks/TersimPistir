@@ -79,9 +79,18 @@ jobs:
           )
           if count != 1:
               raise SystemExit("Could not find versionCode in android/app/build.gradle")
+
+          text, name_count = re.subn(
+              r'(?m)(\\bversionName\\s+)[\'"][^\'"]*[\'"]',
+              r'\\g<1>"1.2"',
+              text,
+              count=1,
+          )
+          if name_count != 1:
+              raise SystemExit("Could not find versionName in android/app/build.gradle")
           app_gradle.write_text(text)
 
-          print("Android app versionCode set to 2.")
+          print("Android app versionCode set to 2 and versionName set to 1.2.")
           for path in gradle_files:
               for line in path.read_text().splitlines():
                   if re.search(r'\b(minSdkVersion|minSdk|compileSdkVersion|compileSdk|targetSdkVersion|targetSdk)\b', line):
@@ -99,10 +108,10 @@ jobs:
         id: signing
         shell: bash
         env:
-          ANDROID_KEYSTORE_BASE64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -148,19 +157,19 @@ jobs:
 
       - name: Build installable debug APK
         env:
-          ANDROID_KEYSTORE_PATH: \${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew assembleDebug
 
       - name: Build signed release Android App Bundle
         if: steps.signing.outputs.enabled == 'true'
         env:
-          ANDROID_KEYSTORE_PATH: \${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew bundleRelease
 
       - name: Build unsigned release Android App Bundle (signing not configured)
@@ -170,7 +179,7 @@ jobs:
       - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tersim-pistir-android-\${{ github.run_number }}
+          name: tersim-pistir-android-${{ github.run_number }}
           if-no-files-found: error
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
