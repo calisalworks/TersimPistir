@@ -47,12 +47,12 @@ jobs:
 
           files = list(Path("android").rglob("*.gradle")) + list(Path("android").rglob("*.gradle.kts"))
           rules = (
-              (r'(?m)(\\bminSdkVersion\\s*[:=]\\s*)\\d+\\b', r'\\g<1>24'),
-              (r'(?m)(\\bminSdk\\s*[:=]\\s*)\\d+\\b', r'\\g<1>24'),
-              (r'(?m)(\\bcompileSdkVersion\\s*[:=]\\s*)\\d+\\b', r'\\g<1>36'),
-              (r'(?m)(\\bcompileSdk\\s*[:=]\\s*)\\d+\\b', r'\\g<1>36'),
-              (r'(?m)(\\btargetSdkVersion\\s*[:=]\\s*)\\d+\\b', r'\\g<1>36'),
-              (r'(?m)(\\btargetSdk\\s*[:=]\\s*)\\d+\\b', r'\\g<1>36'),
+              (r'(?m)(\bminSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>24'),
+              (r'(?m)(\bminSdk\s*[:=]\s*)\d+\b', r'\g<1>24'),
+              (r'(?m)(\bcompileSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>36'),
+              (r'(?m)(\bcompileSdk\s*[:=]\s*)\d+\b', r'\g<1>36'),
+              (r'(?m)(\btargetSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>36'),
+              (r'(?m)(\btargetSdk\s*[:=]\s*)\d+\b', r'\g<1>36'),
           )
           changed = []
           for path in files:
@@ -69,7 +69,7 @@ jobs:
           for path in files:
               text = path.read_text()
               for key in ("minSdkVersion", "minSdk", "compileSdkVersion", "compileSdk", "targetSdkVersion", "targetSdk"):
-                  for match in re.finditer(rf'(?m)^.*\\b{key}\\b.*
+                  for match in re.finditer(rf'(?m)^.*\b{key}\b.*
 
       - name: Add Android microphone permissions
         run: node scripts/ensure-android-permissions.mjs
