@@ -26,18 +26,9 @@ export const GooglePlayRateModal: React.FC<GooglePlayRateModalProps> = ({
       origin: { y: 0.5 },
     });
 
-    // Try Google Play app protocol first, fallback to browser store link
-    const playStoreAppUrl = 'market://details?id=reverse.singing.reversesinging';
-    const playStoreWebUrl = 'https://play.google.com/store/apps/details?id=reverse.singing.reversesinging';
-
-    try {
-      window.location.href = playStoreAppUrl;
-      setTimeout(() => {
-        window.open(playStoreWebUrl, '_blank');
-      }, 500);
-    } catch {
-      window.open(playStoreWebUrl, '_blank');
-    }
+    // Open this app's Google Play listing. The selected stars are not submitted automatically.
+    const playStoreWebUrl = 'https://play.google.com/store/apps/details?id=com.calisalworks.tersimpistir';
+    window.location.href = playStoreWebUrl;
 
     setTimeout(() => {
       onClose();
@@ -95,7 +86,7 @@ export const GooglePlayRateModal: React.FC<GooglePlayRateModalProps> = ({
                 isDark ? 'text-neutral-300' : 'text-neutral-600'
               }`}
             >
-              Google Play sayfasına yönlendiriliyorsunuz...
+              Google Play sayfası açılıyor. Puanını mağazada kendin verebilirsin.
             </p>
           </div>
         ) : (
@@ -105,8 +96,7 @@ export const GooglePlayRateModal: React.FC<GooglePlayRateModalProps> = ({
                 isDark ? 'text-neutral-300' : 'text-neutral-600'
               }`}
             >
-              Ters ses kaydetme ve ters şarkı meydan okumamızı sevdin mi? 5 yıldız
-              vererek oyunun gelişmesine katkıda bulunabilirsin!
+              Ters ses kaydetme ve ters şarkı meydan okumamızı sevdin mi? Yıldız seçimin burada kalır; puanını Google Play sayfasında kendin verebilirsin.
             </p>
 
             {/* Interactive Stars */}
@@ -145,7 +135,7 @@ export const GooglePlayRateModal: React.FC<GooglePlayRateModalProps> = ({
                 onClick={handleRate}
                 className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-98 text-white rounded-2xl text-sm font-semibold shadow-md shadow-blue-500/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
-                <span>Google Play'de 5 Yıldız Ver</span>
+                <span>Google Play'de Değerlendir</span>
                 <ExternalLink className="w-4 h-4" />
               </button>
 
