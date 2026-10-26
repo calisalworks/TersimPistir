@@ -81,8 +81,8 @@ jobs:
               raise SystemExit("Could not find versionCode in android/app/build.gradle")
 
           text, name_count = re.subn(
-              r'(?m)(\\bversionName\\s+)[\'"][^\'"]*[\'"]',
-              r'\\g<1>"1.2"',
+              r'(?m)(\bversionName\s+)[\'"][^\'"]*[\'"]',
+              r'\g<1>"1.2"',
               text,
               count=1,
           )
