@@ -1,0 +1,127 @@
+import React, { useState } from 'react';
+import { Share2, Check, Sun, Moon, Star } from 'lucide-react';
+import { NavTab } from './BottomNav';
+
+interface TopBarProps {
+  currentTab?: NavTab;
+  onSelectTab?: (tab: NavTab) => void;
+  isDark?: boolean;
+  onToggleTheme?: () => void;
+  onOpenPlayRate?: () => void;
+}
+
+export const TopBar: React.FC<TopBarProps> = ({
+  currentTab = 'home',
+  onSelectTab,
+  isDark = false,
+  onToggleTheme,
+  onOpenPlayRate,
+}) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Tersim Pistir - Ters Ses Oyunu',
+          text: 'Tersim Pistir: Tersine şarkı söyleme meydan okumasında sesini kaydet ve tersine çevir!',
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Ignored
+    }
+  };
+
+  return (
+    <header
+      className={`w-full flex items-center justify-between px-2.5 sm:px-5 pt-2 pb-0.5 select-none shrink-0 transition-colors duration-200 border-none shadow-none ${
+        isDark
+          ? 'bg-[#12131C] text-white'
+          : 'bg-white text-neutral-900'
+      }`}
+    >
+      {/* Sol Taraf: Tüm sekmelerde (Ana Sayfa, Kayıtlar, Ayarlar) aynı şekilde gösterilen büyük şeffaf logo */}
+      <div className="flex items-center min-w-0 flex-1 pr-2 sm:pr-3">
+        <button
+          onClick={() => onSelectTab?.('home')}
+          className="flex items-center py-0.5 w-full cursor-pointer transition-transform active:scale-[0.99] text-left"
+          title="Ana Sayfaya Dön"
+        >
+          <img
+            src="/assets/aistudio/tersim_pistir_transparent_logo.png"
+            alt="Tersim Pistir"
+            className="w-auto h-auto max-h-[120px] sm:max-h-[145px] md:max-h-[165px] max-w-full object-contain object-left border-0 outline-none ring-0 select-none"
+            style={{
+              background: 'transparent',
+              aspectRatio: '1037 / 577',
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Sağ Taraf: Google Play Puanlama, Koyu/Açık Tema (Güneş & Hilal) ve Paylaş Butonları */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-center">
+        {/* Google Play Puanlama Sembolü */}
+        <button
+          onClick={onOpenPlayRate}
+          aria-label="Google Play'de Puanla"
+          title="Google Play'de 5 Yıldız Ver"
+          className={`relative p-2 rounded-full transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+            isDark
+              ? 'hover:bg-neutral-800 text-amber-400 bg-neutral-800/60'
+              : 'hover:bg-amber-50 text-amber-500 bg-amber-50/70 border border-amber-200/60'
+          }`}
+        >
+          <Star className="w-5 h-5 fill-amber-400 text-amber-400 drop-shadow-xs" />
+          <span className="sr-only">Google Play Puanla</span>
+        </button>
+
+        {/* Tema Değiştirme Butonu (Güneş & Hilal) */}
+        <button
+          onClick={onToggleTheme}
+          aria-label={isDark ? 'Açık Temaya Geç (Güneş Modu)' : 'Karanlık Temaya Geç (Hilal Modu)'}
+          title={isDark ? 'Açık Temaya Geç (Güneş)' : 'Koyu Temaya Geç (Hilal)'}
+          className={`p-2 rounded-full transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+            isDark
+              ? 'bg-neutral-800 text-amber-400 hover:bg-neutral-700 border border-neutral-700'
+              : 'bg-neutral-100 text-indigo-700 hover:bg-neutral-200 border border-neutral-200/70'
+          }`}
+        >
+          {isDark ? (
+            <Sun className="w-5 h-5 stroke-[2.2] animate-pulse" />
+          ) : (
+            <Moon className="w-5 h-5 stroke-[2.2] fill-indigo-100" />
+          )}
+        </button>
+
+        {/* Paylaş Butonu */}
+        <button
+          onClick={handleShare}
+          aria-label="Paylaş"
+          title="Tersim Pistir'i Paylaş"
+          className={`p-2 rounded-full transition-all cursor-pointer active:scale-95 flex items-center justify-center ${
+            isDark
+              ? 'text-neutral-300 hover:text-white hover:bg-neutral-800'
+              : 'text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100'
+          }`}
+        >
+          {copied ? (
+            <Check className="w-5 h-5 text-green-500 stroke-[2.5]" />
+          ) : (
+            <Share2 className="w-5 h-5 stroke-[2]" />
+          )}
+        </button>
+      </div>
+    </header>
+  );
+};

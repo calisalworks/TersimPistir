@@ -1,0 +1,9 @@
+{
+  "appName": "Tersim Pistir",
+  "packageName": "com.tersimpistir.app",
+  "versionName": "1.0.2",
+  "versionCode": 3,
+  "minSdkVersion": 21,
+  "targetSdkVersion": 34,
+  "buildDate": "2026-10-25"
+}

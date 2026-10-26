@@ -1,0 +1,11 @@
+{
+  "name": "Remix Remix Audio Reverser - Ters Ses Oyunu",
+  "description": "Sesini kaydet, tersine çevir ve arkadaşlarınla ters şarkı söyleme meydan okumasını oyna!",
+  "requestFramePermissions": [
+    "microphone",
+    "android.permission.RECORD_AUDIO"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

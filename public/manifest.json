@@ -1,0 +1,23 @@
+{
+  "name": "Tersim Pistir - Ters Ses Oyunu",
+  "short_name": "Tersim Pistir",
+  "description": "Tersim Pistir: Sesini kaydet, tersine çevir ve arkadaşlarınla ters şarkı söyleme meydan okumasını oyna!",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#2196F3",
+  "version": "1.0.2",
+  "version_code": 3,
+  "categories": ["games", "music", "entertainment"],
+  "icons": [
+    {
+      "src": "/assets/aistudio/tersim_pistir_transparent_logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
