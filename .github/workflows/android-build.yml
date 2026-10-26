@@ -46,18 +46,18 @@ jobs:
           import re
           path = Path("android/variables.gradle")
           text = path.read_text()
-          for key, old, new in (
-              ("minSdkVersion", 23, 24),
-              ("compileSdkVersion", 35, 36),
-              ("targetSdkVersion", 35, 36),
+          for key, desired in (
+              ("minSdkVersion", 24),
+              ("compileSdkVersion", 36),
+              ("targetSdkVersion", 36),
           ):
-              pattern = rf'(?m)({key}\\s*[:=]\\s*){old}\\b'
-              updated, count = re.subn(pattern, rf'\\g<1>{new}', text, count=1)
+              pattern = rf'(?m)({key}\s*[:=]\s*)\d+\b'
+              updated, count = re.subn(pattern, rf'\g<1>{desired}', text, count=1)
               if count != 1:
-                  raise SystemExit(f"Could not find {key} {old} in android/variables.gradle")
+                  raise SystemExit(f"Could not find {key} assignment in android/variables.gradle")
               text = updated
           path.write_text(text)
-          print("Android minSdkVersion=24, compileSdkVersion=36, targetSdkVersion=36")
+          print("Android SDK versions set: minSdkVersion=24, compileSdkVersion=36, targetSdkVersion=36")
           PY
 
       - name: Add Android microphone permissions
