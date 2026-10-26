@@ -45,13 +45,68 @@ jobs:
       - name: Sync web assets to Android
         run: npx cap sync android
 
-      - name: Build installable debug APK
-        working-directory: android
-        run: ./gradlew assembleDebug
+      - name: Prepare release signing
+        id: signing
+        shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Signing secrets are not configured. This run will create an unsigned AAB, not suitable for Play Console upload."
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/tersim-pistir-upload.jks"
+          test -s "$RUNNER_TEMP/tersim-pistir-upload.jks"
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          path = Path("android/app/build.gradle")
+          text = path.read_text()
+          if "signingConfigs {" not in text:
+              block = """
+              signingConfigs {
+                  release {
+                      storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                  }
+              }
 
-      - name: Build release Android App Bundle (unsigned)
-        working-directory: android
-        run: ./gradlew bundleRelease
+              """
+              text, count = re.subn(r'(?m)^\s*buildTypes\s*\{', block + "    buildTypes {", text, count=1)
+              if count != 1:
+                  raise SystemExit("Could not find buildTypes block in generated Android Gradle file")
+          marker = text.find("buildTypes {")
+          before, after = text[:marker], text[marker:]
+          release_match = re.search(r'(?m)^\s*release\s*\{', after)
+          if not release_match:
+              raise SystemExit("Could not find release build type in Android Gradle file")
+          insert_at = release_match.end()
+          after = after[:insert_at] + "\n            signingConfig signingConfigs.release" + after[insert_at:]
+          path.write_text(before + after)
+          PY
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build installable debug APK
+        run: cd android && ./gradlew assembleDebug
+
+      - name: Build signed release Android App Bundle
+        if: steps.signing.outputs.enabled == 'true'
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: cd android && ./gradlew bundleRelease
+
+      - name: Build unsigned release Android App Bundle (signing not configured)
+        if: steps.signing.outputs.enabled != 'true'
+        run: cd android && ./gradlew bundleRelease
 
       - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
