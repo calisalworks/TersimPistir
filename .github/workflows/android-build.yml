@@ -39,50 +39,54 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
-      - name: Set Android SDK versions for Google Play
+      - name: Set Android SDK versions and version code
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          files = list(Path("android").rglob("*.gradle")) + list(Path("android").rglob("*.gradle.kts"))
-          settings = {
-              "minSdkVersion": 24,
-              "minSdk": 24,
-              "compileSdkVersion": 36,
-              "compileSdk": 36,
-              "targetSdkVersion": 36,
-              "targetSdk": 36,
-          }
-          changed = []
-          for path in files:
+          root = Path("android")
+          gradle_files = list(root.rglob("*.gradle")) + list(root.rglob("*.gradle.kts"))
+          for path in gradle_files:
               text = path.read_text()
               original = text
-              for key, value in settings.items():
-                  pattern = rf'(?m)(\b{key}\s*[:=]\s*)\d+\b'
-                  text = re.sub(pattern, rf'\g<1>{value}', text)
+              for key, value in (
+                  ("minSdkVersion", 24),
+                  ("minSdk", 24),
+                  ("compileSdkVersion", 36),
+                  ("compileSdk", 36),
+                  ("targetSdkVersion", 36),
+                  ("targetSdk", 36),
+              ):
+                  text = re.sub(
+                      rf'(?m)(\b{key}\s*[:=]\s*)\d+\b',
+                      rf'\g<1>{value}',
+                      text,
+                  )
               if text != original:
                   path.write_text(text)
-                  changed.append(str(path))
 
-          app_gradle = Path("android/app/build.gradle")
+          app_gradle = root / "app" / "build.gradle"
           if not app_gradle.exists():
               raise SystemExit("android/app/build.gradle was not generated")
+
           text = app_gradle.read_text()
-          text, count = re.subn(r'(?m)(\bversionCode\s+)\d+\b', r'\g<1>2', text, count=1)
+          text, count = re.subn(
+              r'(?m)(\bversionCode\s+)\d+\b',
+              r'\g<1>2',
+              text,
+              count=1,
+          )
           if count != 1:
               raise SystemExit("Could not find versionCode in android/app/build.gradle")
           app_gradle.write_text(text)
 
-          variables = Path("android/variables.gradle")
-          if variables.exists():
-              print("--- android/variables.gradle ---")
-              print(variables.read_text())
-          print("--- android/app/build.gradle SDK/version settings ---")
-          for line in app_gradle.read_text().splitlines():
-              if re.search(r'\b(minSdk|compileSdk|targetSdk|versionCode)\b', line):
-                  print(line.strip())
-          print("Set target API 36, min SDK 24 where numeric assignments exist, and versionCode 2.")
+          print("Android app versionCode set to 2.")
+          for path in gradle_files:
+              for line in path.read_text().splitlines():
+                  if re.search(r'\b(minSdkVersion|minSdk|compileSdkVersion|compileSdk|targetSdkVersion|targetSdk)\b', line):
+                      print(f"{path}: {line.strip()}")
+          print(f"{app_gradle}: " + next(line.strip() for line in text.splitlines() if "versionCode" in line))
           PY
 
       - name: Add Android microphone permissions
@@ -95,10 +99,10 @@ jobs:
         id: signing
         shell: bash
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_BASE64: \${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
             echo "enabled=false" >> "$GITHUB_OUTPUT"
@@ -110,6 +114,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+
           path = Path("android/app/build.gradle")
           text = path.read_text()
           if "signingConfigs {" not in text:
@@ -128,31 +133,34 @@ jobs:
               if count != 1:
                   raise SystemExit("Could not find buildTypes block in generated Android Gradle file")
           marker = text.find("buildTypes {")
+          if marker < 0:
+              raise SystemExit("Could not find buildTypes block in generated Android Gradle file")
           before, after = text[:marker], text[marker:]
           release_match = re.search(r'(?m)^\s*release\s*\{', after)
           if not release_match:
               raise SystemExit("Could not find release build type in Android Gradle file")
           insert_at = release_match.end()
-          after = after[:insert_at] + "\n            signingConfig signingConfigs.release" + after[insert_at:]
+          if "signingConfig signingConfigs.release" not in after:
+              after = after[:insert_at] + "\n            signingConfig signingConfigs.release" + after[insert_at:]
           path.write_text(before + after)
           PY
           echo "enabled=true" >> "$GITHUB_OUTPUT"
 
       - name: Build installable debug APK
         env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: \${{ runner.temp }}/tersim-pistir-upload.jks
+          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew assembleDebug
 
       - name: Build signed release Android App Bundle
         if: steps.signing.outputs.enabled == 'true'
         env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEYSTORE_PATH: \${{ runner.temp }}/tersim-pistir-upload.jks
+          ANDROID_KEYSTORE_PASSWORD: \${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: \${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: \${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew bundleRelease
 
       - name: Build unsigned release Android App Bundle (signing not configured)
@@ -162,94 +170,7 @@ jobs:
       - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tersim-pistir-android-${{ github.run_number }}
-          if-no-files-found: error
-          path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/bundle/release/app-release.aab
-          retention-days: 14
-, text):
-                      print(f"{path}: {match.group(0).strip()}")
-          PY
-
-      - name: Add Android microphone permissions
-        run: node scripts/ensure-android-permissions.mjs
-
-      - name: Sync web assets to Android
-        run: npx cap sync android
-
-      - name: Prepare release signing
-        id: signing
-        shell: bash
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [[ -z "$ANDROID_KEYSTORE_BASE64" || -z "$ANDROID_KEYSTORE_PASSWORD" || -z "$ANDROID_KEY_ALIAS" || -z "$ANDROID_KEY_PASSWORD" ]]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Signing secrets are not configured. This run will create an unsigned AAB, not suitable for Play Console upload."
-            exit 0
-          fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/tersim-pistir-upload.jks"
-          test -s "$RUNNER_TEMP/tersim-pistir-upload.jks"
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          path = Path("android/app/build.gradle")
-          text = path.read_text()
-          if "signingConfigs {" not in text:
-              block = """
-              signingConfigs {
-                  release {
-                      storeFile file(System.getenv("ANDROID_KEYSTORE_PATH"))
-                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
-                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
-                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
-                  }
-              }
-
-              """
-              text, count = re.subn(r'(?m)^\s*buildTypes\s*\{', block + "    buildTypes {", text, count=1)
-              if count != 1:
-                  raise SystemExit("Could not find buildTypes block in generated Android Gradle file")
-          marker = text.find("buildTypes {")
-          before, after = text[:marker], text[marker:]
-          release_match = re.search(r'(?m)^\s*release\s*\{', after)
-          if not release_match:
-              raise SystemExit("Could not find release build type in Android Gradle file")
-          insert_at = release_match.end()
-          after = after[:insert_at] + "\n            signingConfig signingConfigs.release" + after[insert_at:]
-          path.write_text(before + after)
-          PY
-          echo "enabled=true" >> "$GITHUB_OUTPUT"
-
-      - name: Build installable debug APK
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: cd android && ./gradlew assembleDebug
-
-      - name: Build signed release Android App Bundle
-        if: steps.signing.outputs.enabled == 'true'
-        env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/tersim-pistir-upload.jks
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: cd android && ./gradlew bundleRelease
-
-      - name: Build unsigned release Android App Bundle (signing not configured)
-        if: steps.signing.outputs.enabled != 'true'
-        run: cd android && ./gradlew bundleRelease
-
-      - name: Upload Android build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: tersim-pistir-android-${{ github.run_number }}
+          name: tersim-pistir-android-\${{ github.run_number }}
           if-no-files-found: error
           path: |
             android/app/build/outputs/apk/debug/app-debug.apk
