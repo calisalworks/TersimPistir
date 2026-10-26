@@ -39,18 +39,25 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
-      - name: Set Android minimum SDK to 24
+      - name: Set Android SDK versions for Google Play
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
           path = Path("android/variables.gradle")
           text = path.read_text()
-          updated, count = re.subn(r'(?m)(minSdkVersion\s*[:=]\s*)23\b', r'\g<1>24', text, count=1)
-          if count != 1:
-              raise SystemExit("Could not find minSdkVersion 23 in android/variables.gradle")
-          path.write_text(updated)
-          print("Android minSdkVersion set to 24")
+          for key, old, new in (
+              ("minSdkVersion", 23, 24),
+              ("compileSdkVersion", 35, 36),
+              ("targetSdkVersion", 35, 36),
+          ):
+              pattern = rf'(?m)({key}\\s*[:=]\\s*){old}\\b'
+              updated, count = re.subn(pattern, rf'\\g<1>{new}', text, count=1)
+              if count != 1:
+                  raise SystemExit(f"Could not find {key} {old} in android/variables.gradle")
+              text = updated
+          path.write_text(text)
+          print("Android minSdkVersion=24, compileSdkVersion=36, targetSdkVersion=36")
           PY
 
       - name: Add Android microphone permissions
@@ -92,16 +99,16 @@ jobs:
               }
 
               """
-              text, count = re.subn(r'(?m)^\s*buildTypes\s*\{', block + "    buildTypes {", text, count=1)
+              text, count = re.subn(r'(?m)^\\s*buildTypes\\s*\\{', block + "    buildTypes {", text, count=1)
               if count != 1:
                   raise SystemExit("Could not find buildTypes block in generated Android Gradle file")
           marker = text.find("buildTypes {")
           before, after = text[:marker], text[marker:]
-          release_match = re.search(r'(?m)^\s*release\s*\{', after)
+          release_match = re.search(r'(?m)^\\s*release\\s*\\{', after)
           if not release_match:
               raise SystemExit("Could not find release build type in Android Gradle file")
           insert_at = release_match.end()
-          after = after[:insert_at] + "\n            signingConfig signingConfigs.release" + after[insert_at:]
+          after = after[:insert_at] + "\\n            signingConfig signingConfigs.release" + after[insert_at:]
           path.write_text(before + after)
           PY
           echo "enabled=true" >> "$GITHUB_OUTPUT"
