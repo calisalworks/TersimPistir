@@ -46,30 +46,44 @@ jobs:
           import re
 
           files = list(Path("android").rglob("*.gradle")) + list(Path("android").rglob("*.gradle.kts"))
-          rules = (
-              (r'(?m)(\bminSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>24'),
-              (r'(?m)(\bminSdk\s*[:=]\s*)\d+\b', r'\g<1>24'),
-              (r'(?m)(\bcompileSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>36'),
-              (r'(?m)(\bcompileSdk\s*[:=]\s*)\d+\b', r'\g<1>36'),
-              (r'(?m)(\btargetSdkVersion\s*[:=]\s*)\d+\b', r'\g<1>36'),
-              (r'(?m)(\btargetSdk\s*[:=]\s*)\d+\b', r'\g<1>36'),
-          )
+          settings = {
+              "minSdkVersion": 24,
+              "minSdk": 24,
+              "compileSdkVersion": 36,
+              "compileSdk": 36,
+              "targetSdkVersion": 36,
+              "targetSdk": 36,
+          }
           changed = []
           for path in files:
               text = path.read_text()
               original = text
-              for pattern, replacement in rules:
-                  text = re.sub(pattern, replacement, text)
+              for key, value in settings.items():
+                  pattern = rf'(?m)(\b{key}\s*[:=]\s*)\d+\b'
+                  text = re.sub(pattern, rf'\g<1>{value}', text)
               if text != original:
                   path.write_text(text)
                   changed.append(str(path))
-          if not changed:
-              raise SystemExit("No Android SDK version assignments were found in generated Gradle files")
-          print("Updated SDK version assignments in: " + ", ".join(changed))
-          for path in files:
-              text = path.read_text()
-              for key in ("minSdkVersion", "minSdk", "compileSdkVersion", "compileSdk", "targetSdkVersion", "targetSdk"):
-                  for match in re.finditer(rf'(?m)^.*\b{key}\b.*
+
+          app_gradle = Path("android/app/build.gradle")
+          if not app_gradle.exists():
+              raise SystemExit("android/app/build.gradle was not generated")
+          text = app_gradle.read_text()
+          text, count = re.subn(r'(?m)(\bversionCode\s+)\d+\b', r'\g<1>2', text, count=1)
+          if count != 1:
+              raise SystemExit("Could not find versionCode in android/app/build.gradle")
+          app_gradle.write_text(text)
+
+          variables = Path("android/variables.gradle")
+          if variables.exists():
+              print("--- android/variables.gradle ---")
+              print(variables.read_text())
+          print("--- android/app/build.gradle SDK/version settings ---")
+          for line in app_gradle.read_text().splitlines():
+              if re.search(r'\b(minSdk|compileSdk|targetSdk|versionCode)\b', line):
+                  print(line.strip())
+          print("Set target API 36, min SDK 24 where numeric assignments exist, and versionCode 2.")
+          PY
 
       - name: Add Android microphone permissions
         run: node scripts/ensure-android-permissions.mjs
