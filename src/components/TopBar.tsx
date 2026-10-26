@@ -18,6 +18,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenPlayRate,
 }) => {
   const [copied, setCopied] = useState(false);
+  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.calisalworks.tersimpistir';
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -25,7 +26,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         await navigator.share({
           title: 'Tersim Pistir - Ters Ses Oyunu',
           text: 'Tersim Pistir: Tersine şarkı söyleme meydan okumasında sesini kaydet ve tersine çevir!',
-          url: window.location.href,
+          url: playStoreUrl,
         });
         return;
       } catch {
@@ -34,7 +35,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     }
 
     try {
-      await navigator.clipboard.writeText(window.location.href);
+      await navigator.clipboard.writeText(playStoreUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
