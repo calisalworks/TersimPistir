@@ -9,7 +9,7 @@ if not SOURCE.is_file():
     raise SystemExit(f"Launcher icon source not found: {SOURCE}")
 
 logo = Image.open(SOURCE).convert("RGBA")
-background = (17, 24, 39, 255)
+background = (255, 255, 255, 255)
 sizes = {
     "mdpi": 48,
     "hdpi": 72,
@@ -84,7 +84,7 @@ values = RES / "values"
 values.mkdir(parents=True, exist_ok=True)
 (values / "ic_launcher_background.xml").write_text(
     '<?xml version="1.0" encoding="utf-8"?>\n'
-    '<resources>\n    <color name="ic_launcher_background">#111827</color>\n</resources>\n',
+    '<resources>\n    <color name="ic_launcher_background">#FFFFFF</color>\n</resources>\n',
     encoding="utf-8",
 )
 
