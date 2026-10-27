@@ -3,7 +3,7 @@
 from pathlib import Path
 from PIL import Image, ImageOps
 
-SOURCE = Path("public/assets/aistudio/tersim_pistir_transparent_logo.png")
+SOURCE = Path("public/assets/aistudio/tersim-pistir-round-icon.png")
 RES = Path("android/app/src/main/res")
 if not SOURCE.is_file():
     raise SystemExit(f"Launcher icon source not found: {SOURCE}")
