@@ -1,0 +1,8 @@
+{
+  "appId": "com.calisalworks.tersimpistir",
+  "appName": "Tersim Pistir",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  }
+}
