@@ -31,7 +31,22 @@ for density, size in sizes.items():
     folder = RES / f"mipmap-{density}"
     folder.mkdir(parents=True, exist_ok=True)
     canvas.save(folder / "ic_launcher.png", optimize=True)
-    canvas.save(folder / "ic_launcher_round.png", optimize=True)
+
+    # Round legacy icon: make the artwork smaller and place it on a circular
+    # background so the logo's square frame does not collide with the launcher mask.
+    round_canvas = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    circle = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    from PIL import ImageDraw
+    ImageDraw.Draw(circle).ellipse((0, 0, size - 1, size - 1), fill=background)
+    round_canvas.alpha_composite(circle)
+    round_fitted = ImageOps.contain(
+        logo, (int(size * 0.62), int(size * 0.62)), Image.Resampling.LANCZOS
+    )
+    round_canvas.alpha_composite(
+        round_fitted,
+        ((size - round_fitted.width) // 2, (size - round_fitted.height) // 2),
+    )
+    round_canvas.save(folder / "ic_launcher_round.png", optimize=True)
 
 # Generate adaptive foregrounds at every density. Capacitor creates default
 # foregrounds in all mipmap folders; overwriting only xxxhdpi leaves Android
@@ -51,7 +66,19 @@ for density, icon_size in sizes.items():
     folder = RES / f"mipmap-{density}"
     folder.mkdir(parents=True, exist_ok=True)
     foreground.save(folder / "ic_launcher_foreground.png", optimize=True)
-    foreground.save(folder / "ic_launcher_round_foreground.png", optimize=True)
+
+    # Round adaptive icon gets a smaller foreground to leave a clear circular margin.
+    round_foreground = Image.new("RGBA", (adaptive_size, adaptive_size), (0, 0, 0, 0))
+    round_fitted = ImageOps.contain(
+        logo,
+        (int(adaptive_size * 0.44), int(adaptive_size * 0.44)),
+        Image.Resampling.LANCZOS,
+    )
+    round_foreground.alpha_composite(
+        round_fitted,
+        ((adaptive_size - round_fitted.width) // 2, (adaptive_size - round_fitted.height) // 2),
+    )
+    round_foreground.save(folder / "ic_launcher_round_foreground.png", optimize=True)
 
 values = RES / "values"
 values.mkdir(parents=True, exist_ok=True)
