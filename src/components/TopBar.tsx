@@ -96,7 +96,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <img
               src="/assets/aistudio/tersim_pistir__1__bfd5069e.png"
               alt="Tersim Pistir"
-              className="w-auto h-auto max-h-[120px] sm:max-h-[145px] md:max-h-[165px] max-w-full object-contain object-left border-0 outline-none ring-0 select-none"
+              className="w-auto h-auto max-h-[150px] sm:max-h-[180px] md:max-h-[200px] max-w-full object-contain object-left border-0 outline-none ring-0 select-none"
               style={{
                 background: 'transparent',
                 aspectRatio: '1037 / 577',
