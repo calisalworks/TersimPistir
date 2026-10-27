@@ -94,7 +94,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Ana Sayfaya Dön"
           >
             <img
-              src="/assets/aistudio/tersim_pistir_transparent_logo.png"
+              src="/assets/aistudio/tersim_pistir__1__bfd5069e.png"
               alt="Tersim Pistir"
               className="w-auto h-auto max-h-[120px] sm:max-h-[145px] md:max-h-[165px] max-w-full object-contain object-left border-0 outline-none ring-0 select-none"
               style={{
