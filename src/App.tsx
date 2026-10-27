@@ -190,8 +190,25 @@ export default function App() {
     }
 
     const recorder = new AudioRecorderService();
-    recorder.onVolumeChange = (vol) => setLiveVolume(vol);
-    recorder.onTimeUpdate = (secs) => setRecordingTime(secs);
+    // Limit visualizer-driven React renders; updating the whole screen every
+    // animation frame makes the central record button feel sluggish on phones.
+    let lastVolumeRender = 0;
+    recorder.onVolumeChange = (vol) => {
+      const now = performance.now();
+      if (now - lastVolumeRender >= 100) {
+        lastVolumeRender = now;
+        setLiveVolume(vol);
+      }
+    };
+    // The timer only needs tenth-second precision for the visible counter.
+    let lastTimeRender = 0;
+    recorder.onTimeUpdate = (secs) => {
+      const now = performance.now();
+      if (now - lastTimeRender >= 100) {
+        lastTimeRender = now;
+        setRecordingTime(secs);
+      }
+    };
     recorderRef.current = recorder;
 
     try {
