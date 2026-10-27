@@ -73,7 +73,7 @@ jobs:
           text = app_gradle.read_text()
           text, count = re.subn(
               r'(?m)(\bversionCode\s+)\d+\b',
-              r'\g<1>2',
+              r'\g<1>3',
               text,
               count=1,
           )
@@ -82,7 +82,7 @@ jobs:
 
           text, name_count = re.subn(
               r'(?m)(\bversionName\s+)[\'"][^\'"]*[\'"]',
-              r'\g<1>"1.2"',
+              r'\g<1>"1.3"',
               text,
               count=1,
           )
@@ -100,6 +100,11 @@ jobs:
 
       - name: Add Android microphone permissions
         run: node scripts/ensure-android-permissions.mjs
+
+      - name: Generate branded Android launcher icons
+        run: |
+          python3 -m pip install --disable-pip-version-check Pillow
+          python3 scripts/generate-android-launcher-icons.py
 
       - name: Sync web assets to Android
         run: npx cap sync android
