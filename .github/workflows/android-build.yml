@@ -169,6 +169,9 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: cd android && ./gradlew assembleDebug
 
+      - name: Rename debug APK for easy identification
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/TersimPistir.apk
+
       - name: Build signed release Android App Bundle
         if: steps.signing.outputs.enabled == 'true'
         env:
@@ -188,6 +191,6 @@ jobs:
           name: tersim-pistir-android-${{ github.run_number }}
           if-no-files-found: error
           path: |
-            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/debug/TersimPistir.apk
             android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 14
