@@ -101,13 +101,14 @@ jobs:
       - name: Add Android microphone permissions
         run: node scripts/ensure-android-permissions.mjs
 
+      - name: Sync web assets to Android
+        run: npx cap sync android
+
+      # Run after Capacitor sync so generated default resources cannot replace our branding.
       - name: Generate branded Android launcher icons
         run: |
           python3 -m pip install --disable-pip-version-check Pillow
           python3 scripts/generate-android-launcher-icons.py
-
-      - name: Sync web assets to Android
-        run: npx cap sync android
 
       - name: Prepare release signing
         id: signing
