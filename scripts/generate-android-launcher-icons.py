@@ -80,7 +80,7 @@ if not manifest.is_file():
     raise SystemExit(f"Android manifest not found: {manifest}")
 manifest_text = manifest.read_text(encoding="utf-8")
 import re
-application_match = re.search(r"<application\\b[^>]*>", manifest_text, flags=re.DOTALL)
+application_match = re.search(r"<application\b[^>]*>", manifest_text, flags=re.DOTALL)
 if not application_match:
     raise SystemExit("Could not find <application> in AndroidManifest.xml")
 application_tag = application_match.group(0)
@@ -88,9 +88,9 @@ for attribute, value in (
     ("android:icon", "@mipmap/ic_launcher"),
     ("android:roundIcon", "@mipmap/ic_launcher_round"),
 ):
-    if re.search(rf'\\b{re.escape(attribute)}\\s*=', application_tag):
+    if re.search(rf'\b{re.escape(attribute)}\s*=', application_tag):
         application_tag = re.sub(
-            rf'\\b{re.escape(attribute)}\\s*=\\s*["\\'][^"\\']*["\\']',
+            rf'\b{re.escape(attribute)}\s*=\s*["\'][^"\']*["\']',
             f'{attribute}="{value}"',
             application_tag,
         )
