@@ -73,4 +73,34 @@ for icon_name, foreground_name in (
         encoding="utf-8",
     )
 
-print("Generated branded standard, round, and adaptive Android launcher icons.")
+# Explicitly wire the generated resources into the manifest. Some generated
+# Capacitor projects may retain a different icon reference.
+manifest = Path("android/app/src/main/AndroidManifest.xml")
+if not manifest.is_file():
+    raise SystemExit(f"Android manifest not found: {manifest}")
+manifest_text = manifest.read_text(encoding="utf-8")
+import re
+application_match = re.search(r"<application\\b[^>]*>", manifest_text, flags=re.DOTALL)
+if not application_match:
+    raise SystemExit("Could not find <application> in AndroidManifest.xml")
+application_tag = application_match.group(0)
+for attribute, value in (
+    ("android:icon", "@mipmap/ic_launcher"),
+    ("android:roundIcon", "@mipmap/ic_launcher_round"),
+):
+    if re.search(rf'\\b{re.escape(attribute)}\\s*=', application_tag):
+        application_tag = re.sub(
+            rf'\\b{re.escape(attribute)}\\s*=\\s*["\\'][^"\\']*["\\']',
+            f'{attribute}="{value}"',
+            application_tag,
+        )
+    else:
+        application_tag = application_tag[:-1] + f' {attribute}="{value}">'
+manifest_text = (
+    manifest_text[:application_match.start()]
+    + application_tag
+    + manifest_text[application_match.end():]
+)
+manifest.write_text(manifest_text, encoding="utf-8")
+
+print("Generated branded launcher icons and explicitly wired manifest icon references.")
