@@ -33,22 +33,25 @@ for density, size in sizes.items():
     canvas.save(folder / "ic_launcher.png", optimize=True)
     canvas.save(folder / "ic_launcher_round.png", optimize=True)
 
-# Adaptive foreground uses the 108dp (432px at xxxhdpi) canvas. Keep the logo
-# within the safe central area so launcher masks do not crop the mark.
-adaptive_size = 432
-foreground = Image.new("RGBA", (adaptive_size, adaptive_size), (0, 0, 0, 0))
-fitted = ImageOps.contain(
-    logo, (int(adaptive_size * 0.60), int(adaptive_size * 0.60)),
-    Image.Resampling.LANCZOS,
-)
-foreground.alpha_composite(
-    fitted,
-    ((adaptive_size - fitted.width) // 2, (adaptive_size - fitted.height) // 2),
-)
-folder = RES / "mipmap-xxxhdpi"
-folder.mkdir(parents=True, exist_ok=True)
-foreground.save(folder / "ic_launcher_foreground.png", optimize=True)
-foreground.save(folder / "ic_launcher_round_foreground.png", optimize=True)
+# Generate adaptive foregrounds at every density. Capacitor creates default
+# foregrounds in all mipmap folders; overwriting only xxxhdpi leaves Android
+# free to select a default blue/white icon on devices using another density.
+for density, icon_size in sizes.items():
+    adaptive_size = icon_size * 9 // 4  # 108dp canvas at this density
+    foreground = Image.new("RGBA", (adaptive_size, adaptive_size), (0, 0, 0, 0))
+    fitted = ImageOps.contain(
+        logo,
+        (int(adaptive_size * 0.60), int(adaptive_size * 0.60)),
+        Image.Resampling.LANCZOS,
+    )
+    foreground.alpha_composite(
+        fitted,
+        ((adaptive_size - fitted.width) // 2, (adaptive_size - fitted.height) // 2),
+    )
+    folder = RES / f"mipmap-{density}"
+    folder.mkdir(parents=True, exist_ok=True)
+    foreground.save(folder / "ic_launcher_foreground.png", optimize=True)
+    foreground.save(folder / "ic_launcher_round_foreground.png", optimize=True)
 
 values = RES / "values"
 values.mkdir(parents=True, exist_ok=True)
